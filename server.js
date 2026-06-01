@@ -69,7 +69,7 @@ function appendOutput(job, chunk) {
     .filter(Boolean);
 
   job.output.push(...lines);
-  if (lines.some((line) => /AudioProviderError|YTMusicServerError|download error|Internal error|HTTP 5\d\d|JSONDecodeError|No results found|failed/i.test(line))) {
+  if (lines.some((line) => /AudioProviderError|YTMusicServerError|download error|Internal error|HTTP 5\d\d|JSONDecodeError|No results found|Read-only file system|OSError|failed/i.test(line))) {
     job.hasErrorOutput = true;
   }
   if (
@@ -96,6 +96,13 @@ function isSpotifyUrl(value) {
 function writeRuntimeCookieFile(rawCookies) {
   const filePath = path.join(cacheDir, "youtube-cookies.txt");
   fs.writeFileSync(filePath, rawCookies.replace(/\r\n/g, "\n"), { mode: 0o600 });
+  return filePath;
+}
+
+function copyRuntimeCookieFile(sourcePath) {
+  const filePath = path.join(cacheDir, "youtube-cookies.txt");
+  fs.copyFileSync(sourcePath, filePath);
+  fs.chmodSync(filePath, 0o600);
   return filePath;
 }
 
@@ -133,7 +140,7 @@ function resolveCookieFile() {
 function getExistingCookieFile(filePath, source) {
   if (fs.existsSync(filePath) && fs.statSync(filePath).size > 0) {
     return {
-      path: filePath,
+      path: copyRuntimeCookieFile(filePath),
       source
     };
   }
