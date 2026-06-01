@@ -24,6 +24,12 @@ The server sets `HOME`, `XDG_CONFIG_HOME`, and `XDG_CACHE_HOME` to project-local
 paths before running `spotdl`, which keeps all spotDL config and cache files
 inside this folder.
 
+## YouTube Cookies
+
+For local runs, place a Netscape-format cookie jar at `cookies.txt` in the
+project root. The server automatically passes it to `spotdl` with
+`--cookie-file`. Treat this file as a secret; it is ignored by git and Docker.
+
 ## Deploy to Render
 
 This repo includes a `render.yaml` Blueprint and a `Dockerfile`. On Render:
@@ -40,15 +46,25 @@ can disappear after restarts or redeploys.
 ### YouTube/yt-dlp failures on Render
 
 If downloads fail with `AudioProviderError: YT-DLP download error`, YouTube is
-often blocking anonymous cloud traffic. The app supports optional cookie env
-vars:
+often blocking anonymous cloud traffic. Use a Render Secret File for your
+Netscape-format cookie jar:
+
+1. In your Render service, open Environment.
+2. Under Secret Files, add a file named `cookies.txt`.
+3. Paste the contents of your local `cookies.txt`.
+4. Save changes and redeploy.
+
+At runtime, Render mounts that file at `/etc/secrets/cookies.txt`, and the app
+passes it to `spotdl` with `--cookie-file`.
+
+The app also supports these optional env vars:
 
 - `YOUTUBE_COOKIES`: raw Netscape-format cookies.txt content.
 - `YOUTUBE_COOKIES_B64`: base64-encoded Netscape-format cookies.txt content.
+- `YOUTUBE_COOKIES_FILE`: custom path to a Netscape-format cookie file.
 
-Set one of those as a Render secret environment variable, then redeploy. The
-server writes the cookies to a private runtime file and passes it to `spotdl`
-with `--cookie-file`.
+Environment variables take priority over Render's `/etc/secrets/cookies.txt`
+and the local `cookies.txt` file.
 
 The default provider order is SoundCloud, YouTube Music, then YouTube. The
 Piped provider is intentionally not enabled by default because public Piped

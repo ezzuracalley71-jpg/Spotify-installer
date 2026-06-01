@@ -9,6 +9,8 @@ const rootDir = __dirname;
 const downloadsDir = path.join(rootDir, "downloads");
 const configDir = path.join(rootDir, ".config");
 const cacheDir = path.join(rootDir, ".cache");
+const localCookiesFile = path.join(rootDir, "cookies.txt");
+const renderCookiesFile = "/etc/secrets/cookies.txt";
 const ffmpegBin = path.join(configDir, "spotdl", "ffmpeg");
 const localSpotdl = path.join(rootDir, ".venv", "bin", "spotdl");
 const userSpotdl = path.join(rootDir, ".local", "bin", "spotdl");
@@ -23,7 +25,7 @@ fs.mkdirSync(configDir, { recursive: true });
 fs.mkdirSync(cacheDir, { recursive: true });
 
 const jobs = new Map();
-const cookieFile = writeCookieFile();
+const cookies = resolveCookieFile();
 
 app.use(express.json({ limit: "32kb" }));
 app.use(express.static(path.join(rootDir, "public")));
@@ -71,7 +73,7 @@ function appendOutput(job, chunk) {
     job.hasErrorOutput = true;
   }
   if (
-    !cookieFile &&
+    !cookies.path &&
     lines.some((line) => /YT-DLP download error|youtube\.com\/watch/i.test(line))
   ) {
     job.needsCookies = true;
@@ -91,16 +93,55 @@ function isSpotifyUrl(value) {
   }
 }
 
-function writeCookieFile() {
-  const rawCookies = process.env.YOUTUBE_COOKIES_B64
-    ? Buffer.from(process.env.YOUTUBE_COOKIES_B64, "base64").toString("utf8")
-    : process.env.YOUTUBE_COOKIES;
-
-  if (!rawCookies) return null;
-
+function writeRuntimeCookieFile(rawCookies) {
   const filePath = path.join(cacheDir, "youtube-cookies.txt");
   fs.writeFileSync(filePath, rawCookies.replace(/\r\n/g, "\n"), { mode: 0o600 });
   return filePath;
+}
+
+function resolveCookieFile() {
+  if (process.env.YOUTUBE_COOKIES_FILE) {
+    return getExistingCookieFile(process.env.YOUTUBE_COOKIES_FILE, "YOUTUBE_COOKIES_FILE");
+  }
+
+  if (process.env.YOUTUBE_COOKIES_B64) {
+    return {
+      path: writeRuntimeCookieFile(Buffer.from(process.env.YOUTUBE_COOKIES_B64, "base64").toString("utf8")),
+      source: "YOUTUBE_COOKIES_B64"
+    };
+  }
+
+  if (process.env.YOUTUBE_COOKIES) {
+    return {
+      path: writeRuntimeCookieFile(process.env.YOUTUBE_COOKIES),
+      source: "YOUTUBE_COOKIES"
+    };
+  }
+
+  const renderCookies = getExistingCookieFile(renderCookiesFile, "Render Secret File");
+  if (renderCookies.path) return renderCookies;
+
+  const localCookies = getExistingCookieFile(localCookiesFile, "cookies.txt");
+  if (localCookies.path) return localCookies;
+
+  return {
+    path: null,
+    source: null
+  };
+}
+
+function getExistingCookieFile(filePath, source) {
+  if (fs.existsSync(filePath) && fs.statSync(filePath).size > 0) {
+    return {
+      path: filePath,
+      source
+    };
+  }
+
+  return {
+    path: null,
+    source: null
+  };
 }
 
 function getSpotdlArgs(url) {
@@ -120,8 +161,8 @@ function getSpotdlArgs(url) {
     fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg"
   ];
 
-  if (cookieFile) {
-    args.push("--cookie-file", cookieFile);
+  if (cookies.path) {
+    args.push("--cookie-file", cookies.path);
   }
 
   return args;
@@ -132,7 +173,8 @@ app.get("/api/health", (_req, res) => {
     ok: true,
     spotdl: spotdlBin,
     ffmpeg: fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg",
-    cookiesConfigured: Boolean(cookieFile),
+    cookiesConfigured: Boolean(cookies.path),
+    cookiesSource: cookies.source,
     downloadsDir
   });
 });
