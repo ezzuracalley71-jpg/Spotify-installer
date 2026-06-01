@@ -66,6 +66,10 @@ function appendOutput(job, chunk) {
     .filter(Boolean);
 
   job.output.push(...lines);
+  if (lines.some((line) => /AudioProviderError|download error|No results found|failed/i.test(line))) {
+    job.hasErrorOutput = true;
+  }
+
   if (job.output.length > 160) {
     job.output.splice(0, job.output.length - 160);
   }
@@ -121,10 +125,15 @@ app.post("/api/downloads", (req, res) => {
     [
       "download",
       url,
+      "--audio",
+      "youtube-music",
+      "youtube",
+      "soundcloud",
       "--output",
       "{artist} - {title}.{output-ext}",
       "--threads",
       "4",
+      "--print-errors",
       "--ffmpeg",
       fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg"
     ],
@@ -152,7 +161,7 @@ app.post("/api/downloads", (req, res) => {
 
   child.on("close", (code) => {
     if (job.status !== "failed") {
-      job.status = code === 0 ? "complete" : "failed";
+      job.status = code === 0 && !job.hasErrorOutput ? "complete" : "failed";
       job.finishedAt = new Date().toISOString();
       appendOutput(job, `spotdl exited with code ${code}`);
     }
