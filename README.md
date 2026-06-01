@@ -49,3 +49,7 @@ vars:
 Set one of those as a Render secret environment variable, then redeploy. The
 server writes the cookies to a private runtime file and passes it to `spotdl`
 with `--cookie-file`.
+
+The default provider order is SoundCloud, YouTube Music, then YouTube. The
+Piped provider is intentionally not enabled by default because public Piped
+instances often return invalid or blocked API responses from hosted platforms.

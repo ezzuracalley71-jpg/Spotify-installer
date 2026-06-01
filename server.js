@@ -67,7 +67,7 @@ function appendOutput(job, chunk) {
     .filter(Boolean);
 
   job.output.push(...lines);
-  if (lines.some((line) => /AudioProviderError|download error|No results found|failed/i.test(line))) {
+  if (lines.some((line) => /AudioProviderError|download error|JSONDecodeError|No results found|failed/i.test(line))) {
     job.hasErrorOutput = true;
   }
 
@@ -102,7 +102,6 @@ function getSpotdlArgs(url) {
     "download",
     url,
     "--audio",
-    "piped",
     "soundcloud",
     "youtube-music",
     "youtube",
