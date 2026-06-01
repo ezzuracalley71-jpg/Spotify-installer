@@ -23,6 +23,7 @@ fs.mkdirSync(configDir, { recursive: true });
 fs.mkdirSync(cacheDir, { recursive: true });
 
 const jobs = new Map();
+const cookieFile = writeCookieFile();
 
 app.use(express.json({ limit: "32kb" }));
 app.use(express.static(path.join(rootDir, "public")));
@@ -84,11 +85,49 @@ function isSpotifyUrl(value) {
   }
 }
 
+function writeCookieFile() {
+  const rawCookies = process.env.YOUTUBE_COOKIES_B64
+    ? Buffer.from(process.env.YOUTUBE_COOKIES_B64, "base64").toString("utf8")
+    : process.env.YOUTUBE_COOKIES;
+
+  if (!rawCookies) return null;
+
+  const filePath = path.join(cacheDir, "youtube-cookies.txt");
+  fs.writeFileSync(filePath, rawCookies.replace(/\r\n/g, "\n"), { mode: 0o600 });
+  return filePath;
+}
+
+function getSpotdlArgs(url) {
+  const args = [
+    "download",
+    url,
+    "--audio",
+    "piped",
+    "soundcloud",
+    "youtube-music",
+    "youtube",
+    "--output",
+    "{artist} - {title}.{output-ext}",
+    "--threads",
+    "4",
+    "--print-errors",
+    "--ffmpeg",
+    fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg"
+  ];
+
+  if (cookieFile) {
+    args.push("--cookie-file", cookieFile);
+  }
+
+  return args;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     spotdl: spotdlBin,
     ffmpeg: fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg",
+    cookiesConfigured: Boolean(cookieFile),
     downloadsDir
   });
 });
@@ -122,21 +161,7 @@ app.post("/api/downloads", (req, res) => {
 
   const child = spawn(
     spotdlBin,
-    [
-      "download",
-      url,
-      "--audio",
-      "youtube-music",
-      "youtube",
-      "soundcloud",
-      "--output",
-      "{artist} - {title}.{output-ext}",
-      "--threads",
-      "4",
-      "--print-errors",
-      "--ffmpeg",
-      fs.existsSync(ffmpegBin) ? ffmpegBin : "ffmpeg"
-    ],
+    getSpotdlArgs(url),
     {
       cwd: downloadsDir,
       env: {

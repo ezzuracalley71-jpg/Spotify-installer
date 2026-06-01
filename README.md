@@ -36,3 +36,16 @@ This repo includes a `render.yaml` Blueprint and a `Dockerfile`. On Render:
 Downloaded files are stored in `downloads/` on the service filesystem. Render
 service filesystems are temporary unless you attach a persistent disk, so files
 can disappear after restarts or redeploys.
+
+### YouTube/yt-dlp failures on Render
+
+If downloads fail with `AudioProviderError: YT-DLP download error`, YouTube is
+often blocking anonymous cloud traffic. The app supports optional cookie env
+vars:
+
+- `YOUTUBE_COOKIES`: raw Netscape-format cookies.txt content.
+- `YOUTUBE_COOKIES_B64`: base64-encoded Netscape-format cookies.txt content.
+
+Set one of those as a Render secret environment variable, then redeploy. The
+server writes the cookies to a private runtime file and passes it to `spotdl`
+with `--cookie-file`.
