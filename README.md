@@ -57,6 +57,11 @@ Netscape-format cookie jar:
 At runtime, Render mounts that file at `/etc/secrets/cookies.txt`, and the app
 passes it to `spotdl` with `--cookie-file`.
 
+If YouTube still says `Sign in to confirm you're not a bot` while
+`/api/health` reports `"cookiesConfigured": true`, replace the Secret File with
+a fresh browser export. Export the full YouTube/Google login cookie jar, not
+only a few `.youtube.com` rows.
+
 The app also supports these optional env vars:
 
 - `YOUTUBE_COOKIES`: raw Netscape-format cookies.txt content.

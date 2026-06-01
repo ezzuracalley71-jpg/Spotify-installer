@@ -78,6 +78,12 @@ function appendOutput(job, chunk) {
   ) {
     job.needsCookies = true;
   }
+  if (
+    cookies.path &&
+    lines.some((line) => /Sign in to confirm.*not a bot|Use --cookies-from-browser or --cookies/i.test(line))
+  ) {
+    job.cookiesRejected = true;
+  }
 
   if (job.output.length > 160) {
     job.output.splice(0, job.output.length - 160);
@@ -245,6 +251,12 @@ app.post("/api/downloads", (req, res) => {
         appendOutput(
           job,
           "Render/YouTube download failed without cookies. Add a Render Secret File named cookies.txt, then redeploy."
+        );
+      }
+      if (job.cookiesRejected) {
+        appendOutput(
+          job,
+          "YouTube rejected the configured cookies. Replace the Render Secret File with a fresh browser cookie export that includes YouTube and Google account cookies."
         );
       }
       appendOutput(job, `spotdl exited with code ${code}`);
