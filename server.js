@@ -69,7 +69,7 @@ function appendOutput(job, chunk) {
     .filter(Boolean);
 
   job.output.push(...lines);
-  if (lines.some((line) => /AudioProviderError|download error|JSONDecodeError|No results found|failed/i.test(line))) {
+  if (lines.some((line) => /AudioProviderError|YTMusicServerError|download error|Internal error|HTTP 5\d\d|JSONDecodeError|No results found|failed/i.test(line))) {
     job.hasErrorOutput = true;
   }
   if (
@@ -150,7 +150,6 @@ function getSpotdlArgs(url) {
     url,
     "--audio",
     "soundcloud",
-    "youtube-music",
     "youtube",
     "--output",
     "{artist} - {title}.{output-ext}",
@@ -238,7 +237,7 @@ app.post("/api/downloads", (req, res) => {
       if (job.needsCookies) {
         appendOutput(
           job,
-          "Render/YouTube download failed without cookies. Add YOUTUBE_COOKIES_B64 as a Render secret env var, then redeploy."
+          "Render/YouTube download failed without cookies. Add a Render Secret File named cookies.txt, then redeploy."
         );
       }
       appendOutput(job, `spotdl exited with code ${code}`);
@@ -250,4 +249,9 @@ app.post("/api/downloads", (req, res) => {
 
 app.listen(port, () => {
   console.log(`spotdl web app running at http://127.0.0.1:${port}`);
+  console.log(
+    cookies.path
+      ? `YouTube cookies configured from ${cookies.source}.`
+      : "YouTube cookies are not configured."
+  );
 });
