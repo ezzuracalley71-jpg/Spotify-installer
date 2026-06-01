@@ -70,6 +70,12 @@ function appendOutput(job, chunk) {
   if (lines.some((line) => /AudioProviderError|download error|JSONDecodeError|No results found|failed/i.test(line))) {
     job.hasErrorOutput = true;
   }
+  if (
+    !cookieFile &&
+    lines.some((line) => /YT-DLP download error|youtube\.com\/watch/i.test(line))
+  ) {
+    job.needsCookies = true;
+  }
 
   if (job.output.length > 160) {
     job.output.splice(0, job.output.length - 160);
@@ -187,6 +193,12 @@ app.post("/api/downloads", (req, res) => {
     if (job.status !== "failed") {
       job.status = code === 0 && !job.hasErrorOutput ? "complete" : "failed";
       job.finishedAt = new Date().toISOString();
+      if (job.needsCookies) {
+        appendOutput(
+          job,
+          "Render/YouTube download failed without cookies. Add YOUTUBE_COOKIES_B64 as a Render secret env var, then redeploy."
+        );
+      }
       appendOutput(job, `spotdl exited with code ${code}`);
     }
   });
