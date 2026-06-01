@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>spotDL Web</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel download-panel" aria-labelledby="app-title">
+        <div>
+          <p class="eyebrow">Spotify downloader</p>
+          <h1 id="app-title">spotDL Web</h1>
+        </div>
+
+        <form id="download-form" class="download-form">
+          <label for="spotify-url">Spotify URL</label>
+          <div class="form-row">
+            <input
+              id="spotify-url"
+              name="url"
+              type="url"
+              placeholder="https://open.spotify.com/track/..."
+              autocomplete="off"
+              required
+            />
+            <button type="submit">Download</button>
+          </div>
+        </form>
+
+        <p id="message" class="message" role="status"></p>
+      </section>
+
+      <section class="grid">
+        <section class="panel" aria-labelledby="jobs-title">
+          <div class="section-head">
+            <h2 id="jobs-title">Jobs</h2>
+            <span id="job-count" class="count">0</span>
+          </div>
+          <div id="jobs" class="stack empty">No downloads queued.</div>
+        </section>
+
+        <section class="panel" aria-labelledby="files-title">
+          <div class="section-head">
+            <h2 id="files-title">Files</h2>
+            <span id="file-count" class="count">0</span>
+          </div>
+          <div id="files" class="stack empty">No files downloaded yet.</div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

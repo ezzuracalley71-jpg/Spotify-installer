@@ -1,0 +1,16 @@
+{
+  "name": "spotdl-web-app",
+  "version": "1.0.0",
+  "description": "A small web UI for downloading Spotify tracks with spotdl.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:render": "bash scripts/render-build.sh",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
